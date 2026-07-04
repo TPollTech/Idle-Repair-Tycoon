@@ -318,15 +318,20 @@ namespace IdleRepairTycoon
             double cost = unlocked ? station.UpgradeCost() : station.Definition.UnlockCost;
             double profit = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
 
+            string emoji = station.Definition.Emoji + " ";
             selectedTitleText.text = unlocked
-                ? station.Definition.Title + "  Nv. " + station.Save.Level
-                : station.Definition.Title + " bloqueado";
+                ? emoji + station.Definition.Title + "  Nv. " + station.Save.Level
+                : emoji + station.Definition.Title + " bloqueado";
 
             selectedInfoText.text = unlocked
                 ? station.Definition.Description + "\n" + IdleGameBalance.FormatMoney(profit) + " / serviço • " + station.DurationSeconds().ToString("0.0") + "s"
                 : "Custo para liberar: " + IdleGameBalance.FormatMoney(cost);
 
-            selectedProgressFill.rectTransform.anchorMax = new Vector2(station.NormalizedProgress(), 1f);
+            float p = station.NormalizedProgress();
+            selectedProgressFill.rectTransform.anchorMax = new Vector2(p, 1f);
+            selectedProgressFill.color = p < 0.5f
+                ? Color.Lerp(new Color(0.14f, 0.68f, 0.42f, 1f), new Color(0.95f, 0.80f, 0.12f, 1f), p * 2f)
+                : Color.Lerp(new Color(0.95f, 0.80f, 0.12f, 1f), new Color(0.92f, 0.26f, 0.16f, 1f), (p - 0.5f) * 2f);
             selectedButton.interactable = controller.Save.Cash >= cost;
             selectedButtonText.text = unlocked ? "Melhorar\n" + IdleGameBalance.FormatMoney(cost) : "Liberar\n" + IdleGameBalance.FormatMoney(cost);
         }

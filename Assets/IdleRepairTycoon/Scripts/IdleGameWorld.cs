@@ -67,6 +67,7 @@ namespace IdleRepairTycoon
             BuildCamera();
             BuildLights();
             BuildRoom();
+            BuildDecor();
             BuildStations();
             BuildClients();
             RefreshStations();
@@ -135,6 +136,84 @@ namespace IdleRepairTycoon
                 float x = -4.1f + (i * 1.05f);
                 CreateCube("Shelf" + i, new Vector3(x, 1.26f, 3.42f), new Vector3(0.78f, 0.30f, 0.10f), new Color(0.95f, 0.70f, 0.24f, 1f));
             }
+        }
+
+        private void BuildDecor()
+        {
+            CreatePoster(new Vector3(-3.0f, 1.55f, 3.55f), new Color(0.95f, 0.38f, 0.22f, 1f));
+            CreatePoster(new Vector3(0.0f, 1.60f, 3.55f), new Color(0.20f, 0.66f, 0.44f, 1f));
+            CreatePoster(new Vector3(3.0f, 1.55f, 3.55f), new Color(0.22f, 0.48f, 0.94f, 1f));
+
+            for (int i = 0; i < 4; i++)
+            {
+                float x = -4.1f + (i * 1.05f);
+                CreateCube("ShelfPart" + i + "a", new Vector3(x - 0.22f, 1.44f, 3.38f), new Vector3(0.12f, 0.08f, 0.08f), new Color(0.94f, 0.74f, 0.30f, 1f));
+                CreateCube("ShelfPart" + i + "b", new Vector3(x + 0.20f, 1.40f, 3.38f), new Vector3(0.10f, 0.10f, 0.08f), new Color(0.30f, 0.54f, 0.92f, 1f));
+            }
+
+            CreateChair(new Vector3(-5.25f, 0.0f, -2.10f), Quaternion.Euler(0f, 90f, 0f));
+            CreateChair(new Vector3(-5.25f, 0.0f, -0.90f), Quaternion.Euler(0f, 90f, 0f));
+
+            CreateCube("CounterMonitor", new Vector3(-2.95f, 1.00f, 0.55f), new Vector3(0.40f, 0.30f, 0.04f), new Color(0.04f, 0.06f, 0.12f, 1f));
+            CreateCube("CounterStand", new Vector3(-2.95f, 0.84f, 0.55f), new Vector3(0.06f, 0.04f, 0.06f), new Color(0.50f, 0.52f, 0.56f, 1f));
+
+            CreateClock();
+            CreateHangingSign();
+
+            GameObject cashierScreen = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            cashierScreen.name = "CashierScreenCyl";
+            cashierScreen.transform.SetParent(worldRoot, false);
+            cashierScreen.transform.position = new Vector3(4.28f, 1.18f, -0.82f);
+            cashierScreen.transform.localScale = new Vector3(0.28f, 0.02f, 0.28f);
+            cashierScreen.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+            SetColor(cashierScreen, new Color(0.15f, 0.45f, 0.85f, 1f));
+            Destroy(cashierScreen.GetComponent<Collider>());
+        }
+
+        private void CreatePoster(Vector3 position, Color color)
+        {
+            CreateCube("Poster", position, new Vector3(0.72f, 0.52f, 0.02f), color);
+        }
+
+        private void CreateChair(Vector3 position, Quaternion rotation)
+        {
+            GameObject chair = new GameObject("Chair");
+            chair.transform.SetParent(worldRoot, false);
+            chair.transform.position = position;
+            chair.transform.rotation = rotation;
+
+            CreateCube(chair.transform, "Seat", new Vector3(0f, 0.28f, 0f), new Vector3(0.40f, 0.08f, 0.40f), new Color(0.14f, 0.16f, 0.24f, 1f));
+            CreateCube(chair.transform, "Back", new Vector3(0f, 0.56f, -0.20f), new Vector3(0.38f, 0.48f, 0.06f), new Color(0.14f, 0.16f, 0.24f, 1f));
+            CreateCube(chair.transform, "Leg1", new Vector3(-0.16f, 0.06f, -0.16f), new Vector3(0.04f, 0.12f, 0.04f), new Color(0.08f, 0.10f, 0.16f, 1f));
+            CreateCube(chair.transform, "Leg2", new Vector3(0.16f, 0.06f, -0.16f), new Vector3(0.04f, 0.12f, 0.04f), new Color(0.08f, 0.10f, 0.16f, 1f));
+            CreateCube(chair.transform, "Leg3", new Vector3(-0.16f, 0.06f, 0.16f), new Vector3(0.04f, 0.12f, 0.04f), new Color(0.08f, 0.10f, 0.16f, 1f));
+            CreateCube(chair.transform, "Leg4", new Vector3(0.16f, 0.06f, 0.16f), new Vector3(0.04f, 0.12f, 0.04f), new Color(0.08f, 0.10f, 0.16f, 1f));
+        }
+
+        private void CreateClock()
+        {
+            GameObject clock = new GameObject("WallClock");
+            clock.transform.SetParent(worldRoot, false);
+            clock.transform.position = new Vector3(-1.8f, 1.80f, 3.55f);
+
+            GameObject face = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            face.name = "ClockFace";
+            face.transform.SetParent(clock.transform, false);
+            face.transform.localPosition = Vector3.zero;
+            face.transform.localScale = new Vector3(0.24f, 0.015f, 0.24f);
+            face.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            SetColor(face, Color.white);
+            Destroy(face.GetComponent<Collider>());
+
+            CreateCube(clock.transform, "HourHand", new Vector3(0f, 0.03f, -0.06f), new Vector3(0.02f, 0.01f, 0.08f), new Color(0.06f, 0.08f, 0.14f, 1f));
+            CreateCube(clock.transform, "MinuteHand", new Vector3(0.10f, 0.03f, 0f), new Vector3(0.14f, 0.01f, 0.02f), new Color(0.06f, 0.08f, 0.14f, 1f));
+        }
+
+        private void CreateHangingSign()
+        {
+            CreateCube("HangingSign", new Vector3(-4.15f, 1.85f, -3.20f), new Vector3(0.85f, 0.10f, 0.04f), new Color(0.95f, 0.80f, 0.12f, 1f));
+            CreateCube("SignWireL", new Vector3(-4.45f, 1.60f, -3.20f), new Vector3(0.02f, 0.40f, 0.02f), new Color(0.50f, 0.52f, 0.56f, 1f));
+            CreateCube("SignWireR", new Vector3(-3.85f, 1.60f, -3.20f), new Vector3(0.02f, 0.40f, 0.02f), new Color(0.50f, 0.52f, 0.56f, 1f));
         }
 
         private void BuildStations()
@@ -369,6 +448,11 @@ namespace IdleRepairTycoon
                 SetRendererColor(visual.BaseRenderer, baseColor);
                 SetRendererColor(visual.TopRenderer, unlocked ? Color.white : new Color(0.78f, 0.80f, 0.86f, 1f));
                 SetRendererColor(visual.MachineRenderer, unlocked ? new Color(0.08f, 0.10f, 0.16f, 1f) : new Color(0.20f, 0.22f, 0.28f, 1f));
+                if (unlocked && visual.MachineRenderer != null)
+                {
+                    float levelScale = Mathf.Min(1f + (station.Level - 1) * 0.035f, 1.8f);
+                    visual.MachineRenderer.transform.localScale = new Vector3(0.58f * levelScale, 0.42f * levelScale, 0.36f * levelScale);
+                }
 
                 if (visual.SelectionBase != null)
                     visual.SelectionBase.gameObject.SetActive(selected);
@@ -427,8 +511,8 @@ namespace IdleRepairTycoon
                 {
                     visual.Label.gameObject.SetActive(selected);
                     visual.Label.text = unlocked
-                        ? station.Definition.Title + "  Nv. " + station.Save.Level
-                        : station.Definition.Title + " bloqueado";
+                        ? station.Definition.Emoji + " " + station.Definition.Title + "  Nv. " + station.Save.Level
+                        : station.Definition.Emoji + " " + station.Definition.Title + " bloqueado";
                     visual.Label.color = unlocked ? Color.white : new Color(0.86f, 0.88f, 0.94f, 1f);
                     if (worldCamera != null) visual.Label.transform.rotation = worldCamera.transform.rotation;
                 }

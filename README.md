@@ -70,6 +70,22 @@ Locais já preparados para monetização:
 
 Antes de publicar com anúncio real, integrar o Google Mobile Ads Unity Plugin e usar IDs de teste durante o desenvolvimento.
 
+## Fase 6 — Decoração e Identidade Visual da Oficina
+
+A oficina agora tem personalidade — decoração temática e UI mais informativa:
+
+- posters coloridos na parede do fundo;
+- caixas e peças nas prateleiras amarelas;
+- cadeiras de espera na entrada;
+- monitor e tela no balcão e caixa;
+- relógio de parede;
+- letreiro suspenso na entrada;
+- máquina do serviço cresce conforme o nível da estação;
+- emoji do serviço aparece nos labels 3D e no painel da UI;
+- barra de progresso da estação selecionada muda de cor (verde → amarelo → vermelho).
+
+Arquivos modificados: `IdleGameWorld.cs` e `IdleGameUI.cs`
+
 ## Fase 5 — Game Feel & Retorno Visual
 
 Agora a oficina 3D reage quando o jogador ganha dinheiro:
