@@ -20,8 +20,20 @@ namespace IdleRepairTycoon
             public Transform TechnicianArm;
             public TextMesh Label;
             public Color BaseColor;
+            public float LastProgress = -1f;
+            public float FlashTimer;
         }
 
+        private sealed class FloatingText3D
+        {
+            public TextMesh Text;
+            public Transform Transform;
+            public float Age;
+            public float Life;
+            public Vector3 Velocity;
+        }
+
+        private readonly List<FloatingText3D> floatingTexts3D = new List<FloatingText3D>();
         private IdleGameController controller;
         private Camera worldCamera;
         private Transform worldRoot;
@@ -43,6 +55,7 @@ namespace IdleRepairTycoon
             HandleSelectionInput();
             AnimateClients();
             RefreshStations();
+            AnimateFloatingTexts3D();
         }
 
         private void BuildWorld()
@@ -334,7 +347,23 @@ namespace IdleRepairTycoon
                 bool unlocked = station.Save.Unlocked;
                 float progress = station.NormalizedProgress();
 
-                Color baseColor = unlocked ? visual.BaseColor : new Color(0.40f, 0.43f, 0.50f, 1f);
+                if (unlocked && visual.LastProgress >= 0f && progress < visual.LastProgress - 0.005f)
+                {
+                    double profit = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
+                    if (profit > 0) SpawnFloatingIncome(visual, profit);
+                    visual.FlashTimer = 0.35f;
+                }
+                visual.LastProgress = progress;
+
+                Color flashColor = visual.BaseColor;
+                if (visual.FlashTimer > 0f)
+                {
+                    visual.FlashTimer -= Time.deltaTime;
+                    float t = visual.FlashTimer / 0.35f;
+                    flashColor = Color.Lerp(visual.BaseColor, Color.white, t * 0.7f);
+                }
+
+                Color baseColor = unlocked ? flashColor : new Color(0.40f, 0.43f, 0.50f, 1f);
                 if (selected) baseColor = Color.Lerp(baseColor, Color.white, 0.28f);
 
                 SetRendererColor(visual.BaseRenderer, baseColor);
@@ -350,23 +379,43 @@ namespace IdleRepairTycoon
                     float width = Mathf.Lerp(0.04f, 0.82f, progress);
                     visual.ProgressFill.localScale = new Vector3(width, 1.18f, 1.18f);
                     visual.ProgressFill.localPosition = new Vector3(-0.42f + width * 0.5f, 0.02f, 0f);
+                    if (unlocked)
+                    {
+                        Renderer fillRenderer = visual.ProgressFill.GetComponent<Renderer>();
+                        if (fillRenderer != null)
+                        {
+                            Color fillColor = progress < 0.5f
+                                ? Color.Lerp(new Color(0.20f, 0.78f, 0.48f, 1f), new Color(0.95f, 0.82f, 0.12f, 1f), progress * 2f)
+                                : Color.Lerp(new Color(0.95f, 0.82f, 0.12f, 1f), new Color(0.92f, 0.28f, 0.18f, 1f), (progress - 0.5f) * 2f);
+                            SetRendererColor(fillRenderer, fillColor);
+                        }
+                    }
                 }
 
                 if (visual.Device != null)
                 {
                     visual.Device.gameObject.SetActive(unlocked);
-                    visual.Device.localPosition = new Vector3(0f, 0.74f + Mathf.Sin(Time.time * 8f + visual.Root.GetSiblingIndex()) * 0.020f, -0.28f);
-                    visual.Device.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * 3.5f) * 4f, 0f);
+                    float bobSpeed = unlocked ? 8f + progress * 6f : 0f;
+                    float bobAmount = unlocked ? 0.020f + progress * 0.025f : 0f;
+                    visual.Device.localPosition = new Vector3(0f, 0.74f + Mathf.Sin(Time.time * bobSpeed + visual.Root.GetSiblingIndex()) * bobAmount, -0.28f);
+                    float spinSpeed = unlocked ? 3.5f + progress * 4f : 0f;
+                    float spinAmount = unlocked ? 4f + progress * 8f : 0f;
+                    visual.Device.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * spinSpeed) * spinAmount, 0f);
                 }
 
                 if (visual.Technician != null)
                 {
                     visual.Technician.gameObject.SetActive(unlocked);
-                    visual.Technician.localPosition = new Vector3(0.60f, 0.45f + Mathf.Sin(Time.time * 5f + visual.Root.GetSiblingIndex()) * 0.018f, 0.52f);
+                    float techBob = unlocked ? 0.018f + progress * 0.022f : 0f;
+                    visual.Technician.localPosition = new Vector3(0.60f, 0.45f + Mathf.Sin(Time.time * 5f + visual.Root.GetSiblingIndex()) * techBob, 0.52f);
                 }
 
                 if (visual.TechnicianArm != null)
-                    visual.TechnicianArm.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * 7f + visual.Root.GetSiblingIndex()) * 18f, 0f);
+                {
+                    float armSpeed = unlocked ? 7f + progress * 5f : 7f;
+                    float armAngle = unlocked ? 18f + progress * 20f : 18f;
+                    visual.TechnicianArm.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * armSpeed + visual.Root.GetSiblingIndex()) * armAngle, 0f);
+                }
 
                 if (visual.Root != null)
                 {
@@ -384,6 +433,54 @@ namespace IdleRepairTycoon
                     if (worldCamera != null) visual.Label.transform.rotation = worldCamera.transform.rotation;
                 }
             }
+        }
+
+        private void AnimateFloatingTexts3D()
+        {
+            for (int i = floatingTexts3D.Count - 1; i >= 0; i--)
+            {
+                FloatingText3D ft = floatingTexts3D[i];
+                if (ft == null || ft.Transform == null)
+                {
+                    floatingTexts3D.RemoveAt(i);
+                    continue;
+                }
+                ft.Age += Time.deltaTime;
+                ft.Transform.position += ft.Velocity * Time.deltaTime;
+                float alpha = Mathf.Clamp01(1f - ft.Age / ft.Life);
+                Color c = ft.Text.color;
+                ft.Text.color = new Color(c.r, c.g, c.b, alpha);
+                if (ft.Age >= ft.Life)
+                {
+                    Object.Destroy(ft.Transform.gameObject);
+                    floatingTexts3D.RemoveAt(i);
+                }
+            }
+        }
+
+        private void SpawnFloatingIncome(StationVisual visual, double amount)
+        {
+            GameObject obj = new GameObject("FloatingIncome");
+            obj.transform.SetParent(worldRoot, false);
+            obj.transform.position = visual.Root.position + new Vector3(0f, 1.2f, 0f);
+            if (worldCamera != null) obj.transform.rotation = worldCamera.transform.rotation;
+
+            TextMesh text = obj.AddComponent<TextMesh>();
+            text.text = "+" + IdleGameBalance.FormatMoney(amount);
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.characterSize = 0.048f;
+            text.fontSize = 28;
+            text.color = new Color(0.14f, 0.90f, 0.42f, 1f);
+
+            floatingTexts3D.Add(new FloatingText3D
+            {
+                Text = text,
+                Transform = obj.transform,
+                Age = 0f,
+                Life = 1.4f,
+                Velocity = new Vector3(0f, 0.45f, 0f)
+            });
         }
 
         private GameObject CreateCube(string name, Vector3 position, Vector3 scale, Color color)

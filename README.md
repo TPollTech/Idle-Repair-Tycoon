@@ -70,9 +70,21 @@ Locais já preparados para monetização:
 
 Antes de publicar com anúncio real, integrar o Google Mobile Ads Unity Plugin e usar IDs de teste durante o desenvolvimento.
 
+## Fase 5 — Game Feel & Retorno Visual
+
+Agora a oficina 3D reage quando o jogador ganha dinheiro:
+
+- texto 3D flutuante "+R$" sobre a bancada quando um serviço é concluído;
+- barra de progresso muda de cor: verde → amarelo → vermelho conforme avança;
+- base da bancada pisca em branco quando completa um serviço;
+- aparelho na bancada vibra/gira mais intensamente perto de 100%;
+- técnico e braço animam com mais energia conforme o progresso aumenta.
+
+Arquivo modificado: `Assets/IdleRepairTycoon/Scripts/IdleGameWorld.cs`
+
 ## Próxima fase sugerida
 
-Fase 3:
+Fase 6:
 
 - sprites próprios;
 - técnicos/personagens desenhados;
