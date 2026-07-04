@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -7,48 +6,40 @@ namespace IdleRepairTycoon
 {
     public sealed class IdleGameUI : MonoBehaviour
     {
-        private sealed class StationCard
-        {
-            public string Id;
-            public Text Title;
-            public Text Description;
-            public Text Reward;
-            public Text ButtonText;
-            public Image ProgressFill;
-            public Button ActionButton;
-        }
-
         private sealed class FloatingText
         {
             public RectTransform Rect;
             public Text Text;
+            public Vector2 Velocity;
             public float Age;
             public float Life;
-            public Vector2 Velocity;
         }
 
         private IdleGameController controller;
         private Canvas canvas;
         private Font font;
-        private RectTransform popupLayer;
-        private RectTransform clientLayer;
         private Text cashText;
         private Text incomeText;
         private Text boostText;
         private Text reputationText;
+        private Text selectedTitleText;
+        private Text selectedInfoText;
+        private Text selectedButtonText;
+        private Text prestigeButtonText;
+        private Text hintText;
         private Text toastText;
         private Text offlineText;
-        private GameObject offlinePanel;
+        private Image selectedProgressFill;
+        private Button selectedButton;
         private Button prestigeButton;
-        private Text prestigeButtonText;
+        private GameObject offlinePanel;
+        private RectTransform floatingLayer;
         private double lastOfflineIncome;
         private double lastObservedCash;
         private bool hasCashSnapshot;
         private float cashPopupCooldown;
         private float toastTimer;
-        private readonly List<StationCard> stationCards = new List<StationCard>();
-        private readonly List<RectTransform> clients = new List<RectTransform>();
-        private readonly List<FloatingText> floaters = new List<FloatingText>();
+        private readonly System.Collections.Generic.List<FloatingText> floaters = new System.Collections.Generic.List<FloatingText>();
 
         public void Bind(IdleGameController gameController)
         {
@@ -65,11 +56,11 @@ namespace IdleRepairTycoon
 
         private void Update()
         {
-            AnimateClients();
-            AnimateFloaters();
             WatchCashDelta();
+            AnimateFloaters();
 
             if (cashPopupCooldown > 0f) cashPopupCooldown -= Time.deltaTime;
+
             if (toastTimer > 0f)
             {
                 toastTimer -= Time.deltaTime;
@@ -93,9 +84,10 @@ namespace IdleRepairTycoon
 
             GameObject canvasObject = new GameObject("IdleRepairCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
+
             canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10;
+            canvas.sortingOrder = 30;
 
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -105,219 +97,131 @@ namespace IdleRepairTycoon
 
             RectTransform root = canvasObject.GetComponent<RectTransform>();
             Stretch(root);
-            canvasObject.AddComponent<Image>().color = new Color(0.92f, 0.95f, 1f, 1f);
 
-            RectTransform safe = CreatePanel("SafeArea", root, new Color(0f, 0f, 0f, 0f));
-            Stretch(safe);
-
-            VerticalLayoutGroup mainLayout = safe.gameObject.AddComponent<VerticalLayoutGroup>();
-            mainLayout.padding = new RectOffset(28, 28, 28, 28);
-            mainLayout.spacing = 16;
-            mainLayout.childAlignment = TextAnchor.UpperCenter;
-            mainLayout.childForceExpandWidth = true;
-            mainLayout.childForceExpandHeight = false;
-
-            BuildHeader(safe);
-            BuildWorkshopVisual(safe);
-            BuildStationList(safe);
-            BuildBottomActions(safe);
+            BuildTopHud(root);
+            BuildHint(root);
+            BuildSelectedStationPanel(root);
+            BuildBottomActions(root);
             BuildOfflinePanel(root);
             BuildToast(root);
 
-            popupLayer = CreatePanel("PopupLayer", root, new Color(0f, 0f, 0f, 0f));
-            Stretch(popupLayer);
+            floatingLayer = CreatePanel("FloatingLayer", root, new Color(0f, 0f, 0f, 0f));
+            Stretch(floatingLayer);
+            floatingLayer.SetAsLastSibling();
         }
 
-        private void BuildHeader(RectTransform parent)
+        private void BuildTopHud(RectTransform root)
         {
-            RectTransform header = CreatePanel("Header", parent, new Color(0.07f, 0.10f, 0.19f, 1f));
-            AddLayout(header, -1, 250);
+            RectTransform hud = CreatePanel("TopHud", root, new Color(0.04f, 0.06f, 0.11f, 0.92f));
+            hud.anchorMin = new Vector2(0.04f, 0.86f);
+            hud.anchorMax = new Vector2(0.96f, 0.985f);
+            hud.offsetMin = Vector2.zero;
+            hud.offsetMax = Vector2.zero;
 
-            VerticalLayoutGroup layout = header.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(24, 24, 18, 18);
+            VerticalLayoutGroup layout = hud.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(22, 22, 12, 12);
             layout.spacing = 8;
             layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            Text title = CreateText("Title", header, "Idle Assistência", 48, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            AddLayout(title.rectTransform, -1, 58);
+            Text title = CreateText("Title", hud, "Idle Assistência", 32, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.86f, 0.94f, 1f, 1f));
+            AddLayout(title.rectTransform, -1, 38);
 
-            cashText = CreateText("Cash", header, "R$ 0", 64, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.70f, 0.92f, 1f, 1f));
-            AddLayout(cashText.rectTransform, -1, 72);
+            cashText = CreateText("Cash", hud, "R$ 0", 54, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            AddLayout(cashText.rectTransform, -1, 58);
 
-            RectTransform row = CreatePanel("StatsRow", header, new Color(0f, 0f, 0f, 0f));
-            AddLayout(row, -1, 58);
-
+            RectTransform row = CreatePanel("HudStats", hud, new Color(0f, 0f, 0f, 0f));
+            AddLayout(row, -1, 40);
             HorizontalLayoutGroup rowLayout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 12;
-            rowLayout.childForceExpandWidth = true;
-            rowLayout.childForceExpandHeight = true;
+            rowLayout.spacing = 10;
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = true;
+            rowLayout.childForceExpandHeight = true;
 
             incomeText = CreatePill(row, "+R$ 0/s");
             reputationText = CreatePill(row, "Rep. 0");
             boostText = CreatePill(row, "Turbo off");
         }
 
-        private void BuildWorkshopVisual(RectTransform parent)
+        private void BuildHint(RectTransform root)
         {
-            RectTransform area = CreatePanel("Workshop", parent, new Color(0.84f, 0.90f, 0.98f, 1f));
-            AddLayout(area, -1, 560);
+            RectTransform hint = CreatePanel("Hint", root, new Color(1f, 1f, 1f, 0.84f));
+            hint.anchorMin = new Vector2(0.08f, 0.785f);
+            hint.anchorMax = new Vector2(0.92f, 0.835f);
+            hint.offsetMin = Vector2.zero;
+            hint.offsetMax = Vector2.zero;
 
-            Text sign = CreateText("Sign", area, "OFICINA EM MOVIMENTO", 34, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.08f, 0.12f, 0.22f, 1f));
-            Anchor(sign.rectTransform, 0.05f, 0.84f, 0.95f, 0.97f);
-
-            RectTransform wall = CreatePanel("InfoWall", area, Color.white);
-            Anchor(wall, 0.06f, 0.52f, 0.94f, 0.80f);
-            Text info = CreateText("Info", wall, "Clientes chegam, deixam aparelhos, as bancadas consertam e o caixa gira sozinho.", 27, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.25f, 0.30f, 0.42f, 1f));
-            Stretch(info.rectTransform, 18, 18, 12, 12);
-
-            CreateWorkshopBlock(area, "CLIENTES", 0.06f, 0.14f, 0.24f, 0.42f, new Color(0.18f, 0.56f, 0.95f, 1f));
-            CreateWorkshopBlock(area, "BALCÃO", 0.30f, 0.14f, 0.48f, 0.42f, new Color(0.12f, 0.68f, 0.44f, 1f));
-            CreateWorkshopBlock(area, "BANCADAS", 0.54f, 0.14f, 0.75f, 0.42f, new Color(0.96f, 0.62f, 0.16f, 1f));
-            CreateWorkshopBlock(area, "CAIXA", 0.81f, 0.14f, 0.94f, 0.42f, new Color(0.70f, 0.34f, 0.92f, 1f));
-
-            RectTransform line = CreatePanel("FlowLine", area, new Color(0.12f, 0.17f, 0.28f, 1f));
-            Anchor(line, 0.14f, 0.08f, 0.88f, 0.105f);
-
-            clientLayer = CreatePanel("Clients", area, new Color(0f, 0f, 0f, 0f));
-            Stretch(clientLayer);
-            clients.Clear();
-            for (int i = 0; i < 7; i++)
-            {
-                RectTransform client = CreatePanel("Client" + i, clientLayer, Color.white);
-                client.sizeDelta = new Vector2(56, 56);
-                Text face = CreateText("Face", client, "C", 23, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.08f, 0.12f, 0.22f, 1f));
-                Stretch(face.rectTransform);
-                clients.Add(client);
-            }
+            hintText = CreateText("HintText", hint, "Toque em uma bancada para melhorar", 23, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.12f, 0.16f, 0.25f, 1f));
+            Stretch(hintText.rectTransform, 12, 12, 4, 4);
         }
 
-        private void BuildStationList(RectTransform parent)
+        private void BuildSelectedStationPanel(RectTransform root)
         {
-            RectTransform scrollRoot = CreatePanel("StationScroll", parent, new Color(0f, 0f, 0f, 0f));
-            AddLayout(scrollRoot, -1, 0, 1f);
+            RectTransform panel = CreatePanel("SelectedStationPanel", root, new Color(0.98f, 0.99f, 1f, 0.94f));
+            panel.anchorMin = new Vector2(0.04f, 0.135f);
+            panel.anchorMax = new Vector2(0.96f, 0.305f);
+            panel.offsetMin = Vector2.zero;
+            panel.offsetMax = Vector2.zero;
 
-            ScrollRect scroll = scrollRoot.gameObject.AddComponent<ScrollRect>();
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.scrollSensitivity = 32;
-            scroll.movementType = ScrollRect.MovementType.Elastic;
-
-            RectTransform viewport = CreatePanel("Viewport", scrollRoot, new Color(0f, 0f, 0f, 0.01f));
-            Stretch(viewport);
-            Mask mask = viewport.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
-
-            RectTransform content = CreatePanel("Content", viewport, new Color(0f, 0f, 0f, 0f));
-            content.anchorMin = new Vector2(0, 1);
-            content.anchorMax = new Vector2(1, 1);
-            content.pivot = new Vector2(0.5f, 1);
-            content.offsetMin = Vector2.zero;
-            content.offsetMax = Vector2.zero;
-
-            VerticalLayoutGroup layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 16;
+            HorizontalLayoutGroup layout = panel.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(20, 20, 18, 18);
+            layout.spacing = 18;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
 
-            ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            RectTransform info = CreatePanel("StationInfo", panel, new Color(0f, 0f, 0f, 0f));
+            AddLayout(info, 0, -1, 1f);
+            VerticalLayoutGroup infoLayout = info.gameObject.AddComponent<VerticalLayoutGroup>();
+            infoLayout.spacing = 8;
+            infoLayout.childControlWidth = true;
+            infoLayout.childControlHeight = true;
+            infoLayout.childForceExpandHeight = false;
 
-            scroll.viewport = viewport;
-            scroll.content = content;
+            selectedTitleText = CreateText("StationTitle", info, "Bancada", 32, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.08f, 0.12f, 0.22f, 1f));
+            AddLayout(selectedTitleText.rectTransform, -1, 38);
 
-            stationCards.Clear();
-            foreach (StationRuntime station in controller.Stations)
-                stationCards.Add(CreateStationCard(content, station));
+            selectedInfoText = CreateText("StationInfoText", info, "Selecione uma estação", 22, FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.28f, 0.32f, 0.43f, 1f));
+            AddLayout(selectedInfoText.rectTransform, -1, 50);
+
+            RectTransform progressBack = CreatePanel("SelectedProgressBack", info, new Color(0.80f, 0.84f, 0.92f, 1f));
+            AddLayout(progressBack, -1, 18);
+            selectedProgressFill = CreateImage("SelectedProgressFill", progressBack, new Color(0.14f, 0.68f, 0.42f, 1f));
+            selectedProgressFill.rectTransform.anchorMin = new Vector2(0f, 0f);
+            selectedProgressFill.rectTransform.anchorMax = new Vector2(0f, 1f);
+            selectedProgressFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            selectedProgressFill.rectTransform.offsetMin = Vector2.zero;
+            selectedProgressFill.rectTransform.offsetMax = Vector2.zero;
+
+            selectedButton = CreateButton(panel, "Melhorar", new Color(0.18f, 0.52f, 0.95f, 1f), OnSelectedButtonPressed);
+            AddLayout(selectedButton.GetComponent<RectTransform>(), 270, -1);
+            selectedButtonText = selectedButton.GetComponentInChildren<Text>();
         }
 
-        private StationCard CreateStationCard(RectTransform parent, StationRuntime station)
+        private void BuildBottomActions(RectTransform root)
         {
-            RectTransform card = CreatePanel("Station_" + station.Definition.Id, parent, Color.white);
-            AddLayout(card, -1, 188);
+            RectTransform bottom = CreatePanel("BottomActions", root, new Color(0.04f, 0.06f, 0.11f, 0.94f));
+            bottom.anchorMin = new Vector2(0.04f, 0.025f);
+            bottom.anchorMax = new Vector2(0.96f, 0.115f);
+            bottom.offsetMin = Vector2.zero;
+            bottom.offsetMax = Vector2.zero;
 
-            HorizontalLayoutGroup row = card.gameObject.AddComponent<HorizontalLayoutGroup>();
-            row.padding = new RectOffset(18, 18, 16, 16);
-            row.spacing = 16;
-            row.childControlWidth = true;
-            row.childControlHeight = true;
-            row.childForceExpandWidth = false;
-            row.childForceExpandHeight = true;
-
-            RectTransform icon = CreatePanel("Icon", card, new Color(0.09f, 0.14f, 0.24f, 1f));
-            AddLayout(icon, 118, -1);
-            Text emoji = CreateText("Emoji", icon, station.Definition.Emoji, 44, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            Stretch(emoji.rectTransform);
-
-            RectTransform body = CreatePanel("Body", card, new Color(0f, 0f, 0f, 0f));
-            AddLayout(body, 0, -1, 1f);
-
-            VerticalLayoutGroup bodyLayout = body.gameObject.AddComponent<VerticalLayoutGroup>();
-            bodyLayout.spacing = 6;
-            bodyLayout.childControlWidth = true;
-            bodyLayout.childControlHeight = true;
-            bodyLayout.childForceExpandHeight = false;
-
-            Text title = CreateText("Title", body, station.Definition.Title, 28, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.09f, 0.12f, 0.20f, 1f));
-            AddLayout(title.rectTransform, -1, 34);
-            Text description = CreateText("Description", body, station.Definition.Description, 20, FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.35f, 0.40f, 0.52f, 1f));
-            AddLayout(description.rectTransform, -1, 28);
-            Text reward = CreateText("Reward", body, "", 22, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.10f, 0.54f, 0.33f, 1f));
-            AddLayout(reward.rectTransform, -1, 28);
-
-            RectTransform bar = CreatePanel("ProgressBar", body, new Color(0.82f, 0.86f, 0.93f, 1f));
-            AddLayout(bar, -1, 18);
-            Image fill = CreateImage("Fill", bar, new Color(0.18f, 0.56f, 0.95f, 1f));
-            fill.rectTransform.anchorMin = new Vector2(0, 0);
-            fill.rectTransform.anchorMax = new Vector2(0, 1);
-            fill.rectTransform.pivot = new Vector2(0, 0.5f);
-            fill.rectTransform.offsetMin = Vector2.zero;
-            fill.rectTransform.offsetMax = Vector2.zero;
-
-            Button button = CreateButton(card, "Melhorar", new Color(0.18f, 0.56f, 0.95f, 1f), null);
-            AddLayout(button.GetComponent<RectTransform>(), 245, -1);
-            Text buttonText = button.GetComponentInChildren<Text>();
-            string id = station.Definition.Id;
-            button.onClick.AddListener(delegate
-            {
-                StationRuntime target = FindStation(id);
-                if (target == null) return;
-                if (target.Save.Unlocked) controller.UpgradeStation(id);
-                else controller.UnlockStation(id);
-            });
-
-            return new StationCard
-            {
-                Id = id,
-                Title = title,
-                Description = description,
-                Reward = reward,
-                ButtonText = buttonText,
-                ProgressFill = fill,
-                ActionButton = button
-            };
-        }
-
-        private void BuildBottomActions(RectTransform parent)
-        {
-            RectTransform actions = CreatePanel("BottomActions", parent, new Color(0.07f, 0.10f, 0.19f, 1f));
-            AddLayout(actions, -1, 150);
-
-            HorizontalLayoutGroup layout = actions.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(18, 18, 18, 18);
-            layout.spacing = 14;
+            HorizontalLayoutGroup layout = bottom.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(12, 12, 12, 12);
+            layout.spacing = 12;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
 
-            CreateButton(actions, "Turbo 2x", new Color(0.18f, 0.56f, 0.95f, 1f), () => controller.WatchAdForBoost());
-            CreateButton(actions, "Pacote R$", new Color(0.12f, 0.64f, 0.38f, 1f), () => controller.WatchAdForMoneyPackage());
-            prestigeButton = CreateButton(actions, "Prestígio", new Color(0.72f, 0.42f, 0.16f, 1f), () => controller.Prestige());
+            CreateButton(bottom, "Turbo 2x", new Color(0.16f, 0.50f, 0.96f, 1f), () => controller.WatchAdForBoost());
+            CreateButton(bottom, "Pacote R$", new Color(0.12f, 0.63f, 0.38f, 1f), () => controller.WatchAdForMoneyPackage());
+            prestigeButton = CreateButton(bottom, "Prestígio", new Color(0.72f, 0.42f, 0.16f, 1f), () => controller.Prestige());
             prestigeButtonText = prestigeButton.GetComponentInChildren<Text>();
         }
 
@@ -328,7 +232,10 @@ namespace IdleRepairTycoon
             offlinePanel.SetActive(false);
 
             RectTransform modal = CreatePanel("OfflineModal", offlinePanel.transform, Color.white);
-            Anchor(modal, 0.08f, 0.34f, 0.92f, 0.66f);
+            modal.anchorMin = new Vector2(0.08f, 0.36f);
+            modal.anchorMax = new Vector2(0.92f, 0.64f);
+            modal.offsetMin = Vector2.zero;
+            modal.offsetMax = Vector2.zero;
 
             VerticalLayoutGroup layout = modal.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(28, 28, 26, 26);
@@ -337,22 +244,25 @@ namespace IdleRepairTycoon
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
-            Text title = CreateText("Title", modal, "Enquanto você estava fora", 28, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.08f, 0.12f, 0.22f, 1f));
-            AddLayout(title.rectTransform, -1, 40);
-            offlineText = CreateText("OfflineText", modal, "Você ganhou R$ 0", 23, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.18f, 0.22f, 0.33f, 1f));
-            AddLayout(offlineText.rectTransform, -1, 64);
+            Text title = CreateText("OfflineTitle", modal, "Enquanto você estava fora", 29, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.08f, 0.12f, 0.22f, 1f));
+            AddLayout(title.rectTransform, -1, 42);
 
-            RectTransform row = CreatePanel("Buttons", modal, new Color(0f, 0f, 0f, 0f));
-            AddLayout(row, -1, 64);
+            offlineText = CreateText("OfflineText", modal, "Você ganhou R$ 0", 24, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.18f, 0.22f, 0.33f, 1f));
+            AddLayout(offlineText.rectTransform, -1, 68);
+
+            RectTransform row = CreatePanel("OfflineButtons", modal, new Color(0f, 0f, 0f, 0f));
+            AddLayout(row, -1, 66);
             HorizontalLayoutGroup rowLayout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
             rowLayout.spacing = 12;
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
             rowLayout.childForceExpandWidth = true;
+            rowLayout.childForceExpandHeight = true;
 
             CreateButton(row, "Receber", new Color(0.45f, 0.48f, 0.56f, 1f), () => offlinePanel.SetActive(false));
-            CreateButton(row, "Dobrar anúncio", new Color(0.12f, 0.64f, 0.38f, 1f), () =>
+            CreateButton(row, "Dobrar anúncio", new Color(0.12f, 0.63f, 0.38f, 1f), () =>
             {
                 offlinePanel.SetActive(false);
                 controller.DoubleOfflineIncomeWithAd(lastOfflineIncome);
@@ -361,22 +271,15 @@ namespace IdleRepairTycoon
 
         private void BuildToast(RectTransform root)
         {
-            RectTransform panel = CreatePanel("ToastPanel", root, new Color(0.04f, 0.05f, 0.08f, 0.90f));
-            panel.anchorMin = new Vector2(0.08f, 0.08f);
-            panel.anchorMax = new Vector2(0.92f, 0.08f);
-            panel.pivot = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(0, 68);
+            RectTransform panel = CreatePanel("ToastPanel", root, new Color(0.04f, 0.05f, 0.08f, 0.92f));
+            panel.anchorMin = new Vector2(0.08f, 0.335f);
+            panel.anchorMax = new Vector2(0.92f, 0.335f);
+            panel.sizeDelta = new Vector2(0, 70);
             panel.anchoredPosition = Vector2.zero;
-            toastText = CreateText("Toast", panel, "", 21, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+
+            toastText = CreateText("ToastText", panel, "", 23, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
             Stretch(toastText.rectTransform, 12, 12, 6, 6);
             panel.gameObject.SetActive(false);
-        }
-
-        private void ShowOfflinePanel(double amount, bool capped)
-        {
-            lastOfflineIncome = amount;
-            offlineText.text = "Você ganhou " + IdleGameBalance.FormatMoney(amount) + (capped ? "\nLimite offline: 8 horas." : "");
-            offlinePanel.SetActive(true);
         }
 
         private void Refresh()
@@ -392,28 +295,58 @@ namespace IdleRepairTycoon
             {
                 prestigeButton.interactable = controller.CanPrestige;
                 if (prestigeButtonText != null)
-                    prestigeButtonText.text = controller.CanPrestige ? "Prestígio\nDisponível" : "Prestígio\n" + IdleGameBalance.FormatMoney(IdleGameBalance.PrestigeCost);
+                    prestigeButtonText.text = controller.CanPrestige ? "Prestígio" : "Prestígio\n" + IdleGameBalance.FormatMoney(IdleGameBalance.PrestigeCost);
             }
 
-            foreach (StationCard card in stationCards)
+            RefreshSelectedStation();
+        }
+
+        private void RefreshSelectedStation()
+        {
+            StationRuntime station = controller.SelectedStation;
+            if (station == null)
             {
-                StationRuntime station = FindStation(card.Id);
-                if (station == null) continue;
-
-                bool unlocked = station.Save.Unlocked;
-                double cost = unlocked ? station.UpgradeCost() : station.Definition.UnlockCost;
-                double previewReward = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
-
-                card.Title.text = unlocked ? station.Definition.Title + "  Nv. " + station.Save.Level : station.Definition.Title + "  bloqueado";
-                card.Description.text = unlocked ? station.Definition.Description : "Liberar para ativar esta bancada.";
-                card.Reward.text = unlocked
-                    ? "Ganha " + IdleGameBalance.FormatMoney(previewReward) + " a cada " + station.DurationSeconds().ToString("0.0") + "s"
-                    : "Custo: " + IdleGameBalance.FormatMoney(cost);
-
-                card.ProgressFill.rectTransform.anchorMax = new Vector2(station.NormalizedProgress(), 1f);
-                card.ButtonText.text = unlocked ? "Melhorar\n" + IdleGameBalance.FormatMoney(cost) : "Liberar\n" + IdleGameBalance.FormatMoney(cost);
-                card.ActionButton.interactable = controller.Save.Cash >= cost;
+                selectedTitleText.text = "Nenhuma bancada";
+                selectedInfoText.text = "Toque em uma bancada da oficina.";
+                selectedButton.interactable = false;
+                selectedButtonText.text = "Selecionar";
+                selectedProgressFill.rectTransform.anchorMax = new Vector2(0f, 1f);
+                return;
             }
+
+            bool unlocked = station.Save.Unlocked;
+            double cost = unlocked ? station.UpgradeCost() : station.Definition.UnlockCost;
+            double profit = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
+
+            selectedTitleText.text = unlocked
+                ? station.Definition.Title + "  Nv. " + station.Save.Level
+                : station.Definition.Title + " bloqueado";
+
+            selectedInfoText.text = unlocked
+                ? station.Definition.Description + "\n" + IdleGameBalance.FormatMoney(profit) + " / serviço • " + station.DurationSeconds().ToString("0.0") + "s"
+                : "Custo para liberar: " + IdleGameBalance.FormatMoney(cost);
+
+            selectedProgressFill.rectTransform.anchorMax = new Vector2(station.NormalizedProgress(), 1f);
+            selectedButton.interactable = controller.Save.Cash >= cost;
+            selectedButtonText.text = unlocked ? "Melhorar\n" + IdleGameBalance.FormatMoney(cost) : "Liberar\n" + IdleGameBalance.FormatMoney(cost);
+        }
+
+        private void OnSelectedButtonPressed()
+        {
+            StationRuntime station = controller.SelectedStation;
+            if (station == null) return;
+
+            if (station.Save.Unlocked) controller.UpgradeStation(station.Definition.Id);
+            else controller.UnlockStation(station.Definition.Id);
+        }
+
+        private void ShowOfflinePanel(double amount, bool capped)
+        {
+            lastOfflineIncome = amount;
+            offlineText.text = "Você ganhou " + IdleGameBalance.FormatMoney(amount) + (capped ? "\nLimite offline: 8 horas." : "");
+            offlinePanel.SetActive(true);
+            offlinePanel.transform.SetAsLastSibling();
+            if (floatingLayer != null) floatingLayer.SetAsLastSibling();
         }
 
         private void ShowToast(string message)
@@ -422,12 +355,14 @@ namespace IdleRepairTycoon
             toastText.text = message;
             toastText.transform.parent.gameObject.SetActive(true);
             toastText.transform.parent.SetAsLastSibling();
+            if (floatingLayer != null) floatingLayer.SetAsLastSibling();
             toastTimer = 2.2f;
         }
 
         private void WatchCashDelta()
         {
             if (controller == null || controller.Save == null) return;
+
             double current = controller.Save.Cash;
             if (!hasCashSnapshot)
             {
@@ -445,90 +380,65 @@ namespace IdleRepairTycoon
 
             if (delta >= 1d && cashPopupCooldown <= 0f)
             {
-                CreateFloatingText("+" + IdleGameBalance.FormatMoney(delta), new Vector2(Random.Range(-260f, 260f), Random.Range(120f, 420f)), new Vector2(Random.Range(-12f, 12f), 110f), new Color(0.09f, 0.55f, 0.31f, 1f), 34, 1.15f);
+                CreateFloatingText("+" + IdleGameBalance.FormatMoney(delta));
                 lastObservedCash = current;
-                cashPopupCooldown = 0.35f;
+                cashPopupCooldown = 0.36f;
             }
         }
 
-        private StationRuntime FindStation(string id)
+        private void CreateFloatingText(string message)
         {
-            foreach (StationRuntime station in controller.Stations)
-                if (station.Definition.Id == id) return station;
-            return null;
-        }
+            if (floatingLayer == null) return;
 
-        private void AnimateClients()
-        {
-            if (clientLayer == null || controller == null) return;
-            bool active = controller.CurrentIncomePerSecond > 0.01;
-            float activity = Mathf.Clamp01((float)(controller.CurrentIncomePerSecond / 80.0));
+            Text text = CreateText("FloatingMoney", floatingLayer, message, 35, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.20f, 0.86f, 0.52f, 1f));
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(520, 90);
+            rect.anchoredPosition = new Vector2(Random.Range(-260f, 260f), Random.Range(10f, 280f));
 
-            for (int i = 0; i < clients.Count; i++)
+            floaters.Add(new FloatingText
             {
-                RectTransform dot = clients[i];
-                dot.gameObject.SetActive(active);
-                if (!active) continue;
-
-                float t = Mathf.Repeat(Time.time * (0.07f + activity * 0.12f) + i * 0.16f, 1f);
-                float x = Mathf.Lerp(-390f, 390f, t);
-                float y = -170f + Mathf.Sin(Time.time * 2.1f + i) * 12f;
-                dot.anchoredPosition = new Vector2(x, y);
-                dot.localScale = Vector3.one * Mathf.Lerp(0.82f, 1.08f, Mathf.PingPong(Time.time * 1.4f + i * 0.2f, 1f));
-            }
+                Rect = rect,
+                Text = text,
+                Velocity = new Vector2(Random.Range(-14f, 14f), 110f),
+                Life = 1.15f,
+                Age = 0f
+            });
         }
 
         private void AnimateFloaters()
         {
             for (int i = floaters.Count - 1; i >= 0; i--)
             {
-                FloatingText f = floaters[i];
-                if (f == null || f.Rect == null)
+                FloatingText floater = floaters[i];
+                if (floater == null || floater.Rect == null)
                 {
                     floaters.RemoveAt(i);
                     continue;
                 }
 
-                f.Age += Time.deltaTime;
-                f.Rect.anchoredPosition += f.Velocity * Time.deltaTime;
-                Color c = f.Text.color;
-                c.a = Mathf.Clamp01(1f - f.Age / Mathf.Max(0.01f, f.Life));
-                f.Text.color = c;
+                floater.Age += Time.deltaTime;
+                floater.Rect.anchoredPosition += floater.Velocity * Time.deltaTime;
 
-                if (f.Age >= f.Life)
+                Color color = floater.Text.color;
+                color.a = Mathf.Clamp01(1f - floater.Age / Mathf.Max(0.01f, floater.Life));
+                floater.Text.color = color;
+
+                if (floater.Age >= floater.Life)
                 {
-                    Destroy(f.Rect.gameObject);
+                    Destroy(floater.Rect.gameObject);
                     floaters.RemoveAt(i);
                 }
             }
         }
 
-        private void CreateFloatingText(string message, Vector2 start, Vector2 velocity, Color color, int size, float life)
+        private Text CreatePill(RectTransform parent, string value)
         {
-            if (popupLayer == null) return;
-            Text text = CreateText("FloatingText", popupLayer, message, size, FontStyle.Bold, TextAnchor.MiddleCenter, color);
-            RectTransform rect = text.rectTransform;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(520, 82);
-            rect.anchoredPosition = start;
-            floaters.Add(new FloatingText { Rect = rect, Text = text, Velocity = velocity, Life = life, Age = 0f });
-        }
-
-        private void CreateWorkshopBlock(RectTransform parent, string label, float minX, float minY, float maxX, float maxY, Color color)
-        {
-            RectTransform block = CreatePanel(label, parent, color);
-            Anchor(block, minX, minY, maxX, maxY);
-            Text text = CreateText("Text", block, label, 25, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            Stretch(text.rectTransform, 6, 6, 6, 6);
-        }
-
-        private Text CreatePill(RectTransform parent, string label)
-        {
-            RectTransform pill = CreatePanel("Pill", parent, new Color(0.14f, 0.19f, 0.32f, 1f));
-            Text text = CreateText("Text", pill, label, 23, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.82f, 0.92f, 1f, 1f));
-            Stretch(text.rectTransform, 8, 8, 4, 4);
+            RectTransform pill = CreatePanel("Pill", parent, new Color(0.12f, 0.16f, 0.27f, 1f));
+            Text text = CreateText("Text", pill, value, 20, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.82f, 0.92f, 1f, 1f));
+            Stretch(text.rectTransform, 8, 8, 2, 2);
             return text;
         }
 
@@ -536,13 +446,16 @@ namespace IdleRepairTycoon
         {
             GameObject obj = new GameObject(label + "Button", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
             obj.transform.SetParent(parent, false);
+
             Image image = obj.GetComponent<Image>();
             image.color = color;
+            image.raycastTarget = true;
+
             Button button = obj.GetComponent<Button>();
             if (action != null) button.onClick.AddListener(action);
 
-            Text text = CreateText("Text", obj.transform, label, 23, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            Stretch(text.rectTransform, 6, 6, 6, 6);
+            Text text = CreateText("Text", obj.transform, label, 22, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+            Stretch(text.rectTransform, 8, 8, 6, 6);
             return button;
         }
 
@@ -552,6 +465,7 @@ namespace IdleRepairTycoon
             obj.transform.SetParent(parent, false);
             Image image = obj.GetComponent<Image>();
             image.color = color;
+            image.raycastTarget = color.a > 0.02f;
             return obj.GetComponent<RectTransform>();
         }
 
@@ -561,6 +475,7 @@ namespace IdleRepairTycoon
             obj.transform.SetParent(parent, false);
             Image image = obj.GetComponent<Image>();
             image.color = color;
+            image.raycastTarget = false;
             return image;
         }
 
@@ -568,6 +483,7 @@ namespace IdleRepairTycoon
         {
             GameObject obj = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             obj.transform.SetParent(parent, false);
+
             Text label = obj.GetComponent<Text>();
             label.font = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             label.text = text;
@@ -577,6 +493,7 @@ namespace IdleRepairTycoon
             label.color = color;
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.raycastTarget = false;
             return label;
         }
 
@@ -587,7 +504,7 @@ namespace IdleRepairTycoon
             DontDestroyOnLoad(eventSystem);
         }
 
-        private static void Stretch(RectTransform rect, float left = 0, float right = 0, float top = 0, float bottom = 0)
+        private static void Stretch(RectTransform rect, float left = 0f, float right = 0f, float top = 0f, float bottom = 0f)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -595,20 +512,12 @@ namespace IdleRepairTycoon
             rect.offsetMax = new Vector2(-right, -top);
         }
 
-        private static void Anchor(RectTransform rect, float minX, float minY, float maxX, float maxY)
-        {
-            rect.anchorMin = new Vector2(minX, minY);
-            rect.anchorMax = new Vector2(maxX, maxY);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-        }
-
-        private static void AddLayout(RectTransform rect, float preferredWidth, float preferredHeight, float flexibleHeight = 0f)
+        private static void AddLayout(RectTransform rect, float preferredWidth, float preferredHeight, float flexibleWidth = 0f)
         {
             LayoutElement layout = rect.gameObject.AddComponent<LayoutElement>();
             if (preferredWidth >= 0) layout.preferredWidth = preferredWidth;
             if (preferredHeight >= 0) layout.preferredHeight = preferredHeight;
-            layout.flexibleHeight = flexibleHeight;
+            layout.flexibleWidth = flexibleWidth;
         }
 
         private static string FormatTime(int seconds)
