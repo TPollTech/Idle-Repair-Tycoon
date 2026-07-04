@@ -42,22 +42,21 @@ namespace IdleRepairTycoon
             Material skybox = IdleAssetLoader.LoadMaterial("Assets/StarterAssets/Environment/Art/Skybox/SkyboxLiteWarm.mat");
             if (skybox != null) RenderSettings.skybox = skybox;
 
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Tree_01.prefab", "Asset_Tree_A", new Vector3(-5.05f, 0.02f, -3.30f), new Vector3(0f, 25f, 0f), 0.65f);
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Tree_03.prefab", "Asset_Tree_B", new Vector3(5.05f, 0.02f, -3.05f), new Vector3(0f, -18f, 0f), 0.58f);
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Bush_01.prefab", "Asset_Bush_A", new Vector3(-5.05f, 0.02f, -1.55f), new Vector3(0f, 8f, 0f), 0.48f);
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Bush_02.prefab", "Asset_Bush_B", new Vector3(5.05f, 0.02f, -1.65f), new Vector3(0f, -12f, 0f), 0.48f);
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Flowers_01.prefab", "Asset_Flowers_A", new Vector3(4.82f, 0.02f, 2.50f), new Vector3(0f, -30f, 0f), 0.34f);
-            Place(worldRoot, "Assets/SimpleNaturePack/Prefabs/Rock_02.prefab", "Asset_Stone_A", new Vector3(-4.80f, 0.02f, 2.70f), new Vector3(0f, 40f, 0f), 0.42f);
+            // Só usa assets que fazem sentido para um laboratório/assistência:
+            // caixas de estoque, caixas de peças e pequenos volumes técnicos.
+            // Assets de natureza/flores/árvores ficam fora para não quebrar o tema.
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x200_Prefab.prefab", "Lab_Stock_Box_A", new Vector3(-4.25f, 0.18f, 2.96f), new Vector3(0f, 18f, 0f), 0.18f);
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x300_Prefab.prefab", "Lab_Stock_Box_B", new Vector3(-3.55f, 0.20f, 2.92f), new Vector3(0f, -12f, 0f), 0.16f);
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x200_Prefab.prefab", "Lab_Stock_Box_C", new Vector3(4.78f, 0.18f, 2.48f), new Vector3(0f, -22f, 0f), 0.16f);
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x300_Prefab.prefab", "Lab_Stock_Box_D", new Vector3(4.20f, 0.20f, 2.74f), new Vector3(0f, 28f, 0f), 0.14f);
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_100x100x100_Prefab.prefab", "Lab_Counter_Parts_Box", new Vector3(-3.18f, 1.08f, 0.06f), new Vector3(0f, 22f, 0f), 0.13f);
+            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_100x100x100_Prefab.prefab", "Lab_Register_Supply_Box", new Vector3(4.54f, 1.02f, -0.18f), new Vector3(0f, -18f, 0f), 0.10f);
 
-            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x200_Prefab.prefab", "Asset_Stock_Box_A", new Vector3(-4.25f, 0.18f, 2.96f), new Vector3(0f, 18f, 0f), 0.18f);
-            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_350x250x300_Prefab.prefab", "Asset_Stock_Box_B", new Vector3(-3.55f, 0.20f, 2.92f), new Vector3(0f, -12f, 0f), 0.16f);
-            Place(worldRoot, "Assets/StarterAssets/Environment/Prefabs/Box_100x100x100_Prefab.prefab", "Asset_Counter_Box", new Vector3(-3.18f, 1.08f, 0.06f), new Vector3(0f, 22f, 0f), 0.13f);
-
-            AddStationBox(worldRoot, "Station_film", "Asset_Film_Box");
-            AddStationBox(worldRoot, "Station_battery", "Asset_Battery_Box");
-            AddStationBox(worldRoot, "Station_screen", "Asset_Screen_Box");
-            AddStationBox(worldRoot, "Station_notebook", "Asset_Notebook_Box");
-            AddStationBox(worldRoot, "Station_premium", "Asset_Premium_Box");
+            AddStationBox(worldRoot, "Station_film", "Lab_Film_Parts_Box");
+            AddStationBox(worldRoot, "Station_battery", "Lab_Battery_Parts_Box");
+            AddStationBox(worldRoot, "Station_screen", "Lab_Screen_Parts_Box");
+            AddStationBox(worldRoot, "Station_notebook", "Lab_Notebook_Parts_Box");
+            AddStationBox(worldRoot, "Station_premium", "Lab_Premium_Parts_Box");
         }
 
         private void AddStationBox(Transform worldRoot, string stationName, string objectName)
