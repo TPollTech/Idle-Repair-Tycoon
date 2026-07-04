@@ -28,12 +28,37 @@ namespace IdleRepairTycoon
 #endif
         }
 
+        public static GameObject InstantiateFirstPrefab(Transform parent, string objectName, Vector3 localPosition, Vector3 localEuler, Vector3 localScale, params string[] candidatePaths)
+        {
+#if UNITY_EDITOR
+            if (candidatePaths == null) return null;
+
+            foreach (string path in candidatePaths)
+            {
+                if (string.IsNullOrEmpty(path)) continue;
+
+                GameObject instance = InstantiatePrefab(path, parent, objectName, localPosition, localEuler, localScale);
+                if (instance != null) return instance;
+            }
+#endif
+            return null;
+        }
+
         public static Material LoadMaterial(string assetPath)
         {
 #if UNITY_EDITOR
             return AssetDatabase.LoadAssetAtPath<Material>(assetPath);
 #else
             return null;
+#endif
+        }
+
+        public static bool AssetExists(string assetPath)
+        {
+#if UNITY_EDITOR
+            return !string.IsNullOrEmpty(assetPath) && AssetDatabase.LoadAssetAtPath<Object>(assetPath) != null;
+#else
+            return false;
 #endif
         }
     }
