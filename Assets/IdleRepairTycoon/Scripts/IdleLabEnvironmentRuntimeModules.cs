@@ -73,25 +73,31 @@ namespace IdleRepairTycoon
             MoveByName(worldRoot, "Lab_Counter_Parts_Box", "02_FrontCounter");
             MoveByName(worldRoot, "Asset_Counter_Box", "02_FrontCounter");
             MoveByName(worldRoot, "Small_Box_Counter", "02_FrontCounter");
+            MoveByPrefix(worldRoot, "Lab_FrontCounter", "02_FrontCounter");
 
             MoveByName(worldRoot, "Cashier", "03_Cashier");
             MoveByName(worldRoot, "RegisterScreen", "03_Cashier");
             MoveByName(worldRoot, "Lab_Register_Supply_Box", "03_Cashier");
+            MoveByPrefix(worldRoot, "Lab_Cashier", "03_Cashier");
 
             MoveStation(worldRoot, "Station_film", "Workbench_01_Peliculas");
             MoveStation(worldRoot, "Station_battery", "Workbench_02_Baterias");
             MoveStation(worldRoot, "Station_screen", "Workbench_03_Telas");
             MoveStation(worldRoot, "Station_notebook", "Workbench_04_Notebooks");
             MoveStation(worldRoot, "Station_premium", "Workbench_05_Premium");
+            MoveByPrefix(worldRoot, "Lab_Workbench", "04_Workbenches");
 
             MoveByPrefix(worldRoot, "Shelf", "05_Shelves");
             MoveByPrefix(worldRoot, "Lab_Stock_Box", "05_Shelves");
+            MoveByPrefix(worldRoot, "Lab_Shelf", "05_Shelves");
             MoveByPrefix(worldRoot, "Asset_Stock_Box", "05_Shelves");
             MoveByName(worldRoot, "Stock_Box_A", "05_Shelves");
             MoveByName(worldRoot, "Stock_Box_B", "05_Shelves");
 
             MoveByName(worldRoot, "Clients", "06_WaitingArea");
+            MoveByPrefix(worldRoot, "Lab_Waiting", "06_WaitingArea");
 
+            MoveByPrefix(worldRoot, "Lab_Prop", "07_Props");
             MoveByPrefix(worldRoot, "Asset_", "07_Props");
             MoveByPrefix(worldRoot, "Decor_", "07_Props");
 
