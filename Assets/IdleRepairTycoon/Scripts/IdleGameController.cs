@@ -21,6 +21,7 @@ namespace IdleRepairTycoon
         public double PrestigeMultiplier => 1d + (Save.ReputationStars * 0.12d);
         public double BoostMultiplier => HasActiveBoost ? IdleGameBalance.RewardedBoostMultiplier : 1d;
         public bool CanPrestige => Save.Cash >= IdleGameBalance.PrestigeCost;
+        public IdleGameAudio Audio { get; private set; }
 
         private readonly List<StationRuntime> stations = new List<StationRuntime>();
         private IIdleAdsService ads;
@@ -33,6 +34,9 @@ namespace IdleRepairTycoon
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             ads = IdleAdsFactory.Create();
             ads.Initialize();
+            GameObject audioObj = new GameObject("IdleGameAudio");
+            audioObj.transform.SetParent(transform);
+            Audio = audioObj.AddComponent<IdleGameAudio>();
             LoadOrCreateSave();
         }
 

@@ -343,6 +343,7 @@ namespace IdleRepairTycoon
 
             if (station.Save.Unlocked) controller.UpgradeStation(station.Definition.Id);
             else controller.UnlockStation(station.Definition.Id);
+            if (controller?.Audio != null) controller.Audio.PlayUpgrade();
         }
 
         private void ShowOfflinePanel(double amount, bool capped)
@@ -458,6 +459,7 @@ namespace IdleRepairTycoon
 
             Button button = obj.GetComponent<Button>();
             if (action != null) button.onClick.AddListener(action);
+            if (controller?.Audio != null) button.onClick.AddListener(() => controller.Audio.PlayClick());
 
             Text text = CreateText("Text", obj.transform, label, 22, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
             Stretch(text.rectTransform, 8, 8, 6, 6);

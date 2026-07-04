@@ -387,7 +387,10 @@ namespace IdleRepairTycoon
             }
 
             if (!string.IsNullOrEmpty(bestStation))
+            {
                 controller.SelectStation(bestStation);
+                if (controller.Audio != null) controller.Audio.PlaySelect();
+            }
         }
 
         private void AnimateClients()
@@ -429,7 +432,7 @@ namespace IdleRepairTycoon
                 if (unlocked && visual.LastProgress >= 0f && progress < visual.LastProgress - 0.005f)
                 {
                     double profit = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
-                    if (profit > 0) SpawnFloatingIncome(visual, profit);
+                    if (profit > 0) { SpawnFloatingIncome(visual, profit); if (controller.Audio != null) controller.Audio.PlayCoin(); }
                     visual.FlashTimer = 0.35f;
                 }
                 visual.LastProgress = progress;

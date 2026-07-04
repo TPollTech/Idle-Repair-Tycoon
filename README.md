@@ -70,6 +70,19 @@ Locais já preparados para monetização:
 
 Antes de publicar com anúncio real, integrar o Google Mobile Ads Unity Plugin e usar IDs de teste durante o desenvolvimento.
 
+## Fase 7 — Áudio e Imersão Sonora
+
+O jogo agora tem som — gerado proceduralmente por código, sem arquivos de áudio:
+
+- **moeda** (ding agudo 880Hz) ao completar um serviço;
+- **chirp ascendente** (440→1100Hz) em cada conclusão;
+- **arpeggio** (4 notas subindo) ao melhorar/desbloquear;
+- **clique** nos botões da UI;
+- **ping de seleção** ao tocar numa bancada;
+- **ambiente** de oficina (hum grave 55/85/115Hz) looping.
+
+Arquivos: `IdleGameAudio.cs` (novo), `IdleGameController.cs`, `IdleGameWorld.cs`, `IdleGameUI.cs`
+
 ## Fase 6 — Decoração e Identidade Visual da Oficina
 
 A oficina agora tem personalidade — decoração temática e UI mais informativa:
