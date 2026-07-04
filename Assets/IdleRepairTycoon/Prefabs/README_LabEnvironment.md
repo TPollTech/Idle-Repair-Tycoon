@@ -8,22 +8,28 @@ Criar aqui o prefab oficial do laboratório/assistência técnica:
 
 `Assets/IdleRepairTycoon/Prefabs/LabEnvironment.prefab`
 
-## Estrutura recomendada
+## Estrutura oficial criada
 
-Monte um GameObject vazio chamado `LabEnvironment` e coloque dentro dele:
+Monte um GameObject vazio chamado `LabEnvironment` e organize os objetos seguindo estas pastas/grupos:
 
-- `Floor`
-- `Walls`
-- `FrontCounter`
-- `Cashier`
-- `Workbench_01`
-- `Workbench_02`
-- `Workbench_03`
-- `Workbench_04`
-- `Workbench_05`
-- `Shelves`
-- `WaitingArea`
-- `Props`
+```text
+LabEnvironment
+├── 00_Floor
+├── 01_Walls
+├── 02_FrontCounter
+├── 03_Cashier
+├── 04_Workbenches
+│   ├── Workbench_01_Peliculas
+│   ├── Workbench_02_Baterias
+│   ├── Workbench_03_Telas
+│   ├── Workbench_04_Notebooks
+│   └── Workbench_05_Premium
+├── 05_Shelves
+├── 06_WaitingArea
+├── 07_Props
+├── 08_Lighting
+└── 09_CameraMarkers
+```
 
 ## Assets que combinam
 
