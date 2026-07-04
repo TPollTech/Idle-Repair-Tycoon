@@ -13,6 +13,8 @@ namespace IdleRepairTycoon
 
         public IdleGameSaveData Save { get; private set; }
         public IReadOnlyList<StationRuntime> Stations => stations;
+        public string SelectedStationId { get; private set; }
+        public StationRuntime SelectedStation => GetStation(SelectedStationId) ?? stations.FirstOrDefault();
         public double CurrentIncomePerSecond => CalculateIncomePerSecond();
         public bool HasActiveBoost => IdleGameBalance.UnixNow() < Save.BoostUntilUnix;
         public int BoostSecondsRemaining => Mathf.Max(0, (int)(Save.BoostUntilUnix - IdleGameBalance.UnixNow()));
@@ -36,8 +38,12 @@ namespace IdleRepairTycoon
 
         private void Start()
         {
+            var world = gameObject.AddComponent<IdleGameWorld>();
+            world.Bind(this);
+
             var ui = gameObject.AddComponent<IdleGameUI>();
             ui.Bind(this);
+
             CalculateOfflineIncome();
             RaiseStateChanged();
         }
@@ -78,6 +84,22 @@ namespace IdleRepairTycoon
             SaveGame();
         }
 
+        public void SelectStation(string stationId)
+        {
+            StationRuntime station = FindStation(stationId);
+            if (station == null) return;
+
+            SelectedStationId = stationId;
+            Toast(station.Definition.Title + " selecionado.");
+            RaiseStateChanged();
+        }
+
+        public StationRuntime GetStation(string stationId)
+        {
+            if (string.IsNullOrEmpty(stationId)) return null;
+            return FindStation(stationId);
+        }
+
         public void UnlockStation(string stationId)
         {
             StationRuntime station = FindStation(stationId);
@@ -98,6 +120,7 @@ namespace IdleRepairTycoon
             station.Save.Unlocked = true;
             station.Save.Level = Mathf.Max(1, station.Save.Level);
             station.Save.Progress = 0;
+            SelectedStationId = station.Definition.Id;
             Toast(station.Definition.Title + " liberado!");
             SaveGame();
             RaiseStateChanged();
@@ -116,6 +139,7 @@ namespace IdleRepairTycoon
             }
 
             station.Save.Level++;
+            SelectedStationId = station.Definition.Id;
             Toast(station.Definition.Title + " nível " + station.Save.Level + "!");
             SaveGame();
             RaiseStateChanged();
@@ -278,6 +302,12 @@ namespace IdleRepairTycoon
                 if (stationSave.Level <= 0) stationSave.Level = 1;
 
                 stations.Add(new StationRuntime(definition, stationSave));
+            }
+
+            if (stations.Count > 0 && (string.IsNullOrEmpty(SelectedStationId) || FindStation(SelectedStationId) == null))
+            {
+                StationRuntime firstUnlocked = stations.FirstOrDefault(s => s.Save.Unlocked);
+                SelectedStationId = (firstUnlocked ?? stations[0]).Definition.Id;
             }
         }
 
