@@ -22,6 +22,9 @@ namespace IdleRepairTycoon
             public Color BaseColor;
             public float LastProgress = -1f;
             public float FlashTimer;
+            public Transform LockedSlot;
+            public TextMesh LockedLabel;
+            public float UnlockTimer;
         }
 
         private sealed class FloatingText3D
@@ -277,6 +280,18 @@ namespace IdleRepairTycoon
             TextMesh label = CreateSmallLabel(station.Definition.Title, new Vector3(position.x, 1.30f, position.z - 0.62f), 0.042f, Color.white);
             label.transform.SetParent(root.transform, true);
 
+            GameObject lockedSlot = new GameObject("LockedSlot");
+            lockedSlot.transform.SetParent(root.transform, false);
+            GameObject slotBase = CreateCube(lockedSlot.transform, "SlotBase", Vector3.zero, new Vector3(1.18f, 0.18f, 0.96f), new Color(0.52f, 0.56f, 0.66f, 0.55f));
+            Destroy(slotBase.GetComponent<Collider>());
+            GameObject slotClick = CreateCube(lockedSlot.transform, "SlotClick", new Vector3(0f, 0.18f, 0f), new Vector3(0.90f, 0.10f, 0.76f), new Color(0f, 0f, 0f, 0f));
+            MapStationCollider(slotClick, station.Definition.Id);
+            GameObject slotBorder = CreateCube(lockedSlot.transform, "SlotBorder", new Vector3(0f, 0.05f, 0f), new Vector3(1.24f, 0.02f, 1.02f), new Color(0.72f, 0.78f, 0.88f, 0.50f));
+            Destroy(slotBorder.GetComponent<Collider>());
+
+            TextMesh lockedLabel = CreateSmallLabel("?", new Vector3(position.x, 0.80f, position.z), 0.035f, new Color(0.72f, 0.78f, 0.88f, 0.85f));
+            lockedLabel.transform.SetParent(lockedSlot.transform, true);
+
             return new StationVisual
             {
                 Id = station.Definition.Id,
@@ -290,7 +305,9 @@ namespace IdleRepairTycoon
                 Technician = technician,
                 TechnicianArm = arm,
                 Label = label,
-                BaseColor = color
+                BaseColor = color,
+                LockedSlot = lockedSlot.transform,
+                LockedLabel = lockedLabel
             };
         }
 
@@ -429,6 +446,47 @@ namespace IdleRepairTycoon
                 bool unlocked = station.Save.Unlocked;
                 float progress = station.NormalizedProgress();
 
+                // --- Locked slot ---
+                if (!unlocked)
+                {
+                    if (visual.LockedSlot != null) visual.LockedSlot.gameObject.SetActive(true);
+                    if (visual.BaseRenderer != null) visual.BaseRenderer.enabled = false;
+                    if (visual.TopRenderer != null) visual.TopRenderer.enabled = false;
+                    if (visual.MachineRenderer != null) visual.MachineRenderer.enabled = false;
+                    if (visual.ProgressFill != null) visual.ProgressFill.gameObject.SetActive(false);
+                    if (visual.Device != null) visual.Device.gameObject.SetActive(false);
+                    if (visual.Technician != null) visual.Technician.gameObject.SetActive(false);
+                    if (visual.SelectionBase != null) visual.SelectionBase.gameObject.SetActive(false);
+                    if (visual.Label != null) visual.Label.gameObject.SetActive(false);
+                    if (visual.LockedLabel != null)
+                    {
+                        visual.LockedLabel.text = station.Definition.Emoji + "  " + station.Definition.Title + "\nR$ " + IdleGameBalance.FormatMoney(station.Definition.UnlockCost);
+                        visual.LockedLabel.gameObject.SetActive(true);
+                        if (worldCamera != null) visual.LockedLabel.transform.rotation = worldCamera.transform.rotation;
+                    }
+                    continue;
+                }
+
+                // --- Unlock pop-in animation ---
+                if (visual.LockedSlot != null && visual.LockedSlot.gameObject.activeSelf)
+                {
+                    visual.UnlockTimer = 1f;
+                    visual.Root.localScale = Vector3.one * 0.01f;
+                }
+                if (visual.UnlockTimer > 0f)
+                {
+                    visual.UnlockTimer -= Time.deltaTime * 2.5f;
+                    float s = 1f - Mathf.Clamp01(visual.UnlockTimer);
+                    s = s * s * (3f - 2f * s);
+                    visual.Root.localScale = Vector3.one * Mathf.Lerp(0.01f, 1f, s);
+                }
+
+                // --- Unlocked: hide locked slot, show station ---
+                if (visual.LockedSlot != null) visual.LockedSlot.gameObject.SetActive(false);
+                if (visual.BaseRenderer != null) visual.BaseRenderer.enabled = true;
+                if (visual.TopRenderer != null) visual.TopRenderer.enabled = true;
+                if (visual.MachineRenderer != null) visual.MachineRenderer.enabled = true;
+
                 if (unlocked && visual.LastProgress >= 0f && progress < visual.LastProgress - 0.005f)
                 {
                     double profit = station.ProfitPerJob(controller.PrestigeMultiplier, controller.BoostMultiplier);
@@ -504,7 +562,7 @@ namespace IdleRepairTycoon
                     visual.TechnicianArm.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * armSpeed + visual.Root.GetSiblingIndex()) * armAngle, 0f);
                 }
 
-                if (visual.Root != null)
+                if (visual.Root != null && visual.UnlockTimer <= 0f)
                 {
                     float pulse = selected ? 1f + Mathf.Sin(Time.time * 5f) * 0.018f : 1f;
                     visual.Root.localScale = Vector3.one * pulse;

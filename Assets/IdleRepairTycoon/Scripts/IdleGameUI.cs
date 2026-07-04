@@ -321,7 +321,7 @@ namespace IdleRepairTycoon
             string emoji = station.Definition.Emoji + " ";
             selectedTitleText.text = unlocked
                 ? emoji + station.Definition.Title + "  Nv. " + station.Save.Level
-                : emoji + station.Definition.Title + " bloqueado";
+                : emoji + station.Definition.Title + "  Disponível";
 
             selectedInfoText.text = unlocked
                 ? station.Definition.Description + "\n" + IdleGameBalance.FormatMoney(profit) + " / serviço • " + station.DurationSeconds().ToString("0.0") + "s"

@@ -70,6 +70,18 @@ Locais já preparados para monetização:
 
 Antes de publicar com anúncio real, integrar o Google Mobile Ads Unity Plugin e usar IDs de teste durante o desenvolvimento.
 
+## Fase 8 — Comprar Bancadas (Expansão da Oficina)
+
+Mudança no fluxo do jogo:
+
+- **Você começa com 1 bancada** (Películas) já montada e funcionando.
+- As outras 4 posições aparecem como **"terrenos" vazios** com nome + preço.
+- **Clica no terreno** → UI mostra a bancada e o custo de liberação.
+- **Compra** → a bancada **surge** com animação pop-in (escala 0→1).
+- Depois de comprada, funciona normalmente: produz, sobe de nível, etc.
+
+Arquivo modificado: `IdleGameWorld.cs`, `IdleGameUI.cs`
+
 ## Fase 7 — Áudio e Imersão Sonora
 
 O jogo agora tem som — gerado proceduralmente por código, sem arquivos de áudio:
