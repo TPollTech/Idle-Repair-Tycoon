@@ -71,7 +71,7 @@ namespace IdleRepairTycoon
             Debug.Log("Materiais gerados em: " + materialsPath);
         }
 
-        private static void CreateMaterial(string name, Color color)
+        private void CreateMaterial(string name, Color color)
         {
             string path = materialsPath + "/" + name + ".mat";
             if (File.Exists(path)) return;
