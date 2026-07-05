@@ -223,11 +223,11 @@ namespace IdleRepairTycoon
         {
             Vector3[] positions =
             {
-                new Vector3(-1.75f, 0.35f, 1.20f),
-                new Vector3(0.00f, 0.35f, 1.20f),
-                new Vector3(1.75f, 0.35f, 1.20f),
-                new Vector3(-0.85f, 0.35f, -1.05f),
-                new Vector3(1.05f, 0.35f, -1.05f)
+                new Vector3(-2.2f, 0.35f, 0.8f),
+                new Vector3(0.0f, 0.35f, 0.8f),
+                new Vector3(2.2f, 0.35f, 0.8f),
+                new Vector3(-1.2f, 0.35f, -0.9f),
+                new Vector3(1.4f, 0.35f, -0.9f)
             };
 
             Color[] colors =
